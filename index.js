@@ -12,7 +12,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(morgan('dev'));
 
 // Database Connection
@@ -30,8 +32,9 @@ app.use('/api/pos', require('./routes/poRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 
 // Serve static files for PDFs and Uploads
-app.use('/pdfs', express.static('public/pdfs'));
-app.use('/uploads', express.static('public/uploads'));
+const path = require('path');
+app.use('/pdfs', express.static(path.join(__dirname, 'public/pdfs')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 app.get('/', (req, res) => {
   res.send('Prime Apparel Exports API is running');
@@ -39,8 +42,19 @@ app.get('/', (req, res) => {
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('=== SERVER ERROR ===');
+  console.error('Error:', err);
+  console.error('Error message:', err.message);
+  console.error('Error stack:', err.stack);
+  console.error('Request URL:', req.url);
+  console.error('Request method:', req.method);
+  console.error('Request body:', req.body);
+  console.error('Request user:', req.user);
+
+  res.status(err.status || 500).json({
+    message: err.message || 'Something broke!',
+    error: process.env.NODE_ENV === 'production' ? {} : err.stack
+  });
 });
 
 const PORT = process.env.PORT || 5000;

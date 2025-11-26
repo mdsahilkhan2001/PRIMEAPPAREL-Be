@@ -51,6 +51,7 @@ const seedData = async () => {
         console.log('Users Added');
 
         const buyerUser = createdUsers.find(user => user.role === 'BUYER');
+        const sellerUser = createdUsers.find(user => user.role === 'SELLER');
 
         const leads = [
             {
@@ -158,7 +159,9 @@ const seedData = async () => {
                     technics: 'Garment Dyed',
                     feature: 'Breathable, Anti-Static, Eco-Friendly',
                     origin: 'India'
-                }
+                },
+                seller: sellerUser._id,
+                status: 'ACTIVE'
             },
             {
                 name: 'Bohemian Floral Maxi Kaftan',
@@ -191,7 +194,9 @@ const seedData = async () => {
                     technics: 'Digital Print',
                     feature: 'Quick Dry, Lightweight, Sheer',
                     origin: 'India'
-                }
+                },
+                seller: sellerUser._id,
+                status: 'ACTIVE'
             },
             {
                 name: 'Organic Cotton Waffle Lounge Set',
@@ -224,7 +229,9 @@ const seedData = async () => {
                     technics: 'Piece Dyed',
                     feature: 'Sustainable, Soft Touch, Thermal',
                     origin: 'India'
-                }
+                },
+                seller: sellerUser._id,
+                status: 'ACTIVE'
             },
             {
                 name: 'Hand-Embroidered Denim Jacket',
@@ -255,7 +262,9 @@ const seedData = async () => {
                     technics: 'Hand Embroidered, Stone Wash',
                     feature: 'Durable, Unique Design',
                     origin: 'India'
-                }
+                },
+                seller: sellerUser._id,
+                status: 'ACTIVE'
             },
             {
                 name: 'Kids Summer Cotton Dress',
@@ -286,7 +295,9 @@ const seedData = async () => {
                     technics: 'Screen Print',
                     feature: 'Soft, Breathable, Machine Washable',
                     origin: 'India'
-                }
+                },
+                seller: sellerUser._id,
+                status: 'ACTIVE'
             }
         ];
 

@@ -53,7 +53,21 @@ const productSchema = new mongoose.Schema({
         feature: String,
         origin: String
     },
+    seller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['DRAFT', 'ACTIVE', 'INACTIVE'],
+        default: 'ACTIVE'
+    },
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     }

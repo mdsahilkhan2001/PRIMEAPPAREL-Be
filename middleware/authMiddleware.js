@@ -20,19 +20,23 @@ const protect = async (req, res, next) => {
 
             next();
         } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized' });
+            console.error('Auth error:', error);
+            return res.status(401).json({ message: 'Not authorized' });
         }
-    }
-
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+    } else {
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
 // Grant access to specific roles
 const authorize = (...roles) => {
     return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                message: 'Not authenticated. Please login first.'
+            });
+        }
+
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 message: `User role ${req.user.role} is not authorized to access this route`
