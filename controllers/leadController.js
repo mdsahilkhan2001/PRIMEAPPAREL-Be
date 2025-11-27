@@ -4,8 +4,22 @@ const Lead = require('../models/Lead');
 // @route   POST /api/leads
 // @access  Public
 exports.createLead = async (req, res) => {
+    console.log('createLead called');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('req.body:', req.body);
+    console.log('req.files:', req.files);
     try {
-        const { name, email, phone, country, productType, quantity, budget, message, referenceImages } = req.body;
+        if (!req.body) {
+            console.error('req.body is undefined!');
+            return res.status(400).json({ success: false, error: 'Request body is missing' });
+        }
+        const { name, email, phone, country, productType, quantity, budget, message } = req.body;
+
+        // Handle file uploads
+        let referenceImages = [];
+        if (req.files && req.files.length > 0) {
+            referenceImages = req.files.map(file => `/uploads/${file.filename}`);
+        }
 
         // If user is a buyer, assign userId. If seller/admin, userId is optional (manual entry)
         const userId = req.user.role === 'BUYER' ? req.user.id : (req.body.userId || null);
