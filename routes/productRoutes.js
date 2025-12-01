@@ -19,11 +19,17 @@ router.route('/my-products').get(protect, authorize('SELLER', 'ADMIN'), getSelle
 
 // Protected routes with file upload
 router.route('/')
-    .post(protect, authorize('SELLER', 'ADMIN'), upload.array('images', 10), createProduct);
+    .post(protect, authorize('SELLER', 'ADMIN'), upload.fields([
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 1 }
+    ]), createProduct);
 
 router.route('/:id')
     .get(getProductById)
-    .put(protect, authorize('SELLER', 'ADMIN'), upload.array('images', 10), updateProduct)
+    .put(protect, authorize('SELLER', 'ADMIN'), upload.fields([
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 1 }
+    ]), updateProduct)
     .delete(protect, authorize('SELLER', 'ADMIN'), deleteProduct);
 
 module.exports = router;

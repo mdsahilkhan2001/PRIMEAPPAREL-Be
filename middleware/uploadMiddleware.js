@@ -18,17 +18,17 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype === 'application/pdf') {
         cb(null, true);
     } else {
-        cb(new Error('Not an image or PDF!'), false);
+        cb(new Error('Only images, videos, and PDFs are allowed!'), false);
     }
 };
 
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
-    limits: { fileSize: 1024 * 1024 * 5 } // 5MB limit
+    limits: { fileSize: 1024 * 1024 * 50 } // 50MB limit to accommodate videos
 });
 
 module.exports = upload;
