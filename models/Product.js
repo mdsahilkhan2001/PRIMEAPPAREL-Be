@@ -21,6 +21,10 @@ const productSchema = new mongoose.Schema({
         type: String, // URL to image
         required: true
     }],
+    video: {
+        type: String, // URL to video (optional)
+        required: false
+    },
     priceTiers: [{
         minQty: { type: Number, required: true },
         maxQty: { type: Number }, // Optional for last tier (e.g. 1000+)

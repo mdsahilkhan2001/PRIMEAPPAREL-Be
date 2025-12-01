@@ -1,13 +1,89 @@
 const Product = require('../models/Product');
 
-// @desc    Get all products
+// @desc    Get all products with search, filter, sort, and pagination
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({ status: 'ACTIVE' }).populate('seller', 'name email company');
-        res.json(products);
+        const {
+            search = '',
+            category = 'all',
+            sort = 'newest',
+            page = 1,
+            limit = 12
+        } = req.query;
+
+        // Build query
+        let query = { status: 'ACTIVE' };
+
+        // Search across multiple fields
+        if (search && search.trim() !== '') {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } },
+                { subCategory: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        // Category filter
+        if (category !== 'all') {
+            query.$and = query.$and || [];
+            query.$and.push({
+                $or: [
+                    { category: { $regex: category, $options: 'i' } },
+                    { subCategory: { $regex: category, $options: 'i' } }
+                ]
+            });
+        }
+
+        // Determine sort order
+        let sortOption = {};
+        switch (sort) {
+            case 'price-low':
+                sortOption = { 'priceTiers.0.price': 1 };
+                break;
+            case 'price-high':
+                sortOption = { 'priceTiers.0.price': -1 };
+                break;
+            case 'name-asc':
+                sortOption = { name: 1 };
+                break;
+            case 'name-desc':
+                sortOption = { name: -1 };
+                break;
+            case 'newest':
+            default:
+                sortOption = { createdAt: -1 };
+                break;
+        }
+
+        // Pagination
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const skip = (pageNum - 1) * limitNum;
+
+        // Execute query
+        const products = await Product.find(query)
+            .populate('seller', 'name email company')
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limitNum);
+
+        // Get total count for pagination
+        const total = await Product.countDocuments(query);
+
+        res.json({
+            products,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total,
+                pages: Math.ceil(total / limitNum)
+            }
+        });
     } catch (error) {
+        console.error('Error fetching products:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -20,7 +96,15 @@ const getProductById = async (req, res) => {
         const product = await Product.findById(req.params.id).populate('seller', 'name email company');
 
         if (product) {
-            res.json(product);
+            // Find previous and next products
+            const prevProduct = await Product.findOne({ _id: { $lt: product._id }, status: 'ACTIVE' }).sort({ _id: -1 }).select('_id');
+            const nextProduct = await Product.findOne({ _id: { $gt: product._id }, status: 'ACTIVE' }).sort({ _id: 1 }).select('_id');
+
+            res.json({
+                ...product.toObject(),
+                prevProductId: prevProduct ? prevProduct._id : null,
+                nextProductId: nextProduct ? nextProduct._id : null
+            });
         } else {
             res.status(404).json({ message: 'Product not found' });
         }
@@ -51,8 +135,9 @@ const createProduct = async (req, res) => {
         console.log('Files:', req.files);
         console.log('Body:', req.body);
 
-        // Get uploaded images
-        const imageUrls = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
+        // Get uploaded images and video
+        const imageUrls = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : [];
+        const videoUrl = req.files['video'] ? `/uploads/${req.files['video'][0].filename}` : null;
 
         // Parse JSON fields sent as strings
         const priceTiers = req.body.priceTiers ? JSON.parse(req.body.priceTiers) : [];
@@ -67,6 +152,7 @@ const createProduct = async (req, res) => {
             category: req.body.category,
             subCategory: req.body.subCategory,
             images: imageUrls,
+            video: videoUrl,
             priceTiers,
             colors,
             sizes,
@@ -109,9 +195,9 @@ const updateProduct = async (req, res) => {
 
         // Handle new image uploads or keep existing images
         let imageUrls = product.images; // Keep existing images by default
-        if (req.files && req.files.length > 0) {
+        if (req.files && req.files['images'] && req.files['images'].length > 0) {
             // New images uploaded
-            imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+            imageUrls = req.files['images'].map(file => `/uploads/${file.filename}`);
         } else if (req.body.images) {
             // No new files, check if images field is provided
             try {
@@ -122,6 +208,15 @@ const updateProduct = async (req, res) => {
             }
         }
 
+        // Handle video upload
+        let videoUrl = product.video;
+        if (req.files && req.files['video'] && req.files['video'].length > 0) {
+            videoUrl = `/uploads/${req.files['video'][0].filename}`;
+        } else if (req.body.video === 'null' || req.body.video === '') {
+            // Explicitly removed
+            videoUrl = null;
+        }
+
         // Parse JSON fields if they exist
         const updateData = {
             name: req.body.name || product.name,
@@ -129,6 +224,7 @@ const updateProduct = async (req, res) => {
             category: req.body.category || product.category,
             subCategory: req.body.subCategory || product.subCategory,
             images: imageUrls,
+            video: videoUrl,
             priceTiers: req.body.priceTiers ? JSON.parse(req.body.priceTiers) : product.priceTiers,
             colors: req.body.colors ? JSON.parse(req.body.colors) : product.colors,
             sizes: req.body.sizes ? JSON.parse(req.body.sizes) : product.sizes,
