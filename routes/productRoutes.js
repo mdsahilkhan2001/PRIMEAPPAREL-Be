@@ -7,7 +7,9 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
-    fixProducts
+    fixProducts,
+    getPendingDesigns,
+    updateApprovalStatus
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -17,6 +19,7 @@ router.route('/fix-db').get(fixProducts);
 router.route('/').get(getProducts);
 
 // Protected routes - must be before /:id to avoid matching "my-products" as an id
+router.route('/pending-designs').get(protect, authorize('ADMIN'), getPendingDesigns);
 router.route('/my-products').get(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), getSellerProducts);
 
 // Protected routes with file upload
@@ -37,5 +40,8 @@ router.route('/:id')
         { name: 'complianceDocs', maxCount: 1 }
     ]), updateProduct)
     .delete(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), deleteProduct);
+
+router.route('/:id/approval')
+    .put(protect, authorize('ADMIN'), updateApprovalStatus);
 
 module.exports = router;
