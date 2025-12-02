@@ -384,6 +384,86 @@ const fixProducts = async (req, res) => {
     }
 };
 
+// @desc    Get pending design approvals
+// @route   GET /api/products/pending-designs
+// @access  Private (Admin)
+const getPendingDesigns = async (req, res) => {
+    try {
+        console.log('=== GET PENDING DESIGNS ===');
+        console.log('Query params:', req.query);
+        console.log('User:', req.user?.email, req.user?.role);
+
+        const { status = 'PENDING' } = req.query;
+
+        let query = {};
+
+        // Build query based on status filter
+        if (status !== 'ALL') {
+            query.approvalStatus = status;
+        }
+
+        console.log('MongoDB query:', query);
+
+        // Fetch all products matching the approval status
+        const designs = await Product.find(query)
+            .populate('seller', 'name email role')
+            .sort({ createdAt: -1 });
+
+        console.log(`Found ${designs.length} total products`);
+
+        // Filter to only show products from designers
+        const designerProducts = designs.filter(product => {
+            const isDesigner = product.seller && product.seller.role === 'DESIGNER';
+            console.log(`Product ${product.name}: seller role = ${product.seller?.role}, isDesigner = ${isDesigner}`);
+            return isDesigner;
+        });
+
+        console.log(`Filtered to ${designerProducts.length} designer products`);
+        console.log('===========================');
+
+        res.json(designerProducts);
+    } catch (error) {
+        console.error('Error fetching pending designs:', error);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ message: error.message, error: error.toString() });
+    }
+};
+
+// @desc    Update product approval status
+// @route   PUT /api/products/:id/approval
+// @access  Private (Admin)
+const updateApprovalStatus = async (req, res) => {
+    try {
+        const { approvalStatus, status, rejectionReason } = req.body;
+
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        // Update approval status
+        product.approvalStatus = approvalStatus;
+
+        // Update product status if provided
+        if (status) {
+            product.status = status;
+        }
+
+        // Add rejection reason if provided
+        if (rejectionReason) {
+            product.rejectionReason = rejectionReason;
+        }
+
+        await product.save();
+
+        res.json(product);
+    } catch (error) {
+        console.error('Error updating approval status:', error);
+        res.status(400).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getProducts,
     getProductById,
@@ -391,5 +471,7 @@ module.exports = {
     createProduct,
     updateProduct,
     deleteProduct,
-    fixProducts
+    fixProducts,
+    getPendingDesigns,
+    updateApprovalStatus
 };
