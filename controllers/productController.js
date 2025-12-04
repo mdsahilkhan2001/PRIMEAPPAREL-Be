@@ -13,8 +13,11 @@ const getProducts = async (req, res) => {
             limit = 12
         } = req.query;
 
-        // Build query
-        let query = {}; // { status: 'ACTIVE', approvalStatus: 'APPROVED' };
+        // Build query - show APPROVED products with at least one image
+        let query = { 
+            approvalStatus: 'APPROVED',
+            images: { $exists: true, $ne: [] }  // Must have at least one image
+        };
 
         // Search across multiple fields
         if (search && search.trim() !== '') {
@@ -149,11 +152,11 @@ const createProduct = async (req, res) => {
         console.log('Files:', req.files);
         console.log('Body:', req.body);
 
-        // Get uploaded files
-        const imageUrls = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : [];
-        const videoUrl = req.files['video'] ? `/uploads/${req.files['video'][0].filename}` : null;
-        const techpackUrl = req.files['techpack'] ? `/uploads/${req.files['techpack'][0].filename}` : null;
-        const complianceDocsUrl = req.files['complianceDocs'] ? `/uploads/${req.files['complianceDocs'][0].filename}` : null;
+        // Get uploaded files - store only filenames, static middleware will handle /uploads/ prefix
+        const imageUrls = req.files['images'] ? req.files['images'].map(file => file.filename) : [];
+        const videoUrl = req.files['video'] ? req.files['video'][0].filename : null;
+        const techpackUrl = req.files['techpack'] ? req.files['techpack'][0].filename : null;
+        const complianceDocsUrl = req.files['complianceDocs'] ? req.files['complianceDocs'][0].filename : null;
 
         // Parse JSON fields sent as strings
         const priceTiers = req.body.priceTiers ? JSON.parse(req.body.priceTiers) : [];
@@ -243,8 +246,8 @@ const updateProduct = async (req, res) => {
         // Handle new image uploads or keep existing images
         let imageUrls = product.images; // Keep existing images by default
         if (req.files && req.files['images'] && req.files['images'].length > 0) {
-            // New images uploaded
-            imageUrls = req.files['images'].map(file => `/uploads/${file.filename}`);
+            // New images uploaded - store only filenames
+            imageUrls = req.files['images'].map(file => file.filename);
         } else if (req.body.images) {
             // No new files, check if images field is provided
             try {
@@ -258,7 +261,7 @@ const updateProduct = async (req, res) => {
         // Handle video upload
         let videoUrl = product.video;
         if (req.files && req.files['video'] && req.files['video'].length > 0) {
-            videoUrl = `/uploads/${req.files['video'][0].filename}`;
+            videoUrl = req.files['video'][0].filename;
         } else if (req.body.video === 'null' || req.body.video === '') {
             // Explicitly removed
             videoUrl = null;
@@ -267,13 +270,13 @@ const updateProduct = async (req, res) => {
         // Handle techpack upload
         let techpackUrl = product.techpack;
         if (req.files && req.files['techpack'] && req.files['techpack'].length > 0) {
-            techpackUrl = `/uploads/${req.files['techpack'][0].filename}`;
+            techpackUrl = req.files['techpack'][0].filename;
         }
 
         // Handle compliance docs upload
         let complianceDocsUrl = product.costing?.complianceDocs;
         if (req.files && req.files['complianceDocs'] && req.files['complianceDocs'].length > 0) {
-            complianceDocsUrl = `/uploads/${req.files['complianceDocs'][0].filename}`;
+            complianceDocsUrl = req.files['complianceDocs'][0].filename;
         }
 
         // Update status and approval status from request or keep existing
