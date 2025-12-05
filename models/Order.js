@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
     lead: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Buyer reference
     piNumber: { type: String, unique: true },
     buyerDetails: {
         name: String,
