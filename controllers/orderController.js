@@ -3,29 +3,29 @@ const { generatePDF } = require('../services/pdfService');
 const path = require('path');
 
 exports.createOrder = async (req, res) => {
-    try {
-        const order = await Order.create(req.body);
-        res.status(201).json({ success: true, data: order });
-    } catch (error) {
-        res.status(400).json({ success: false, error: error.message });
-    }
+  try {
+    const order = await Order.create(req.body);
+    res.status(201).json({ success: true, data: order });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
 };
 
 exports.generatePI = async (req, res) => {
-    try {
-        const order = await Order.findById(req.params.id).populate('lead');
-        if (!order) {
-            return res.status(404).json({ success: false, error: 'Order not found' });
-        }
+  try {
+    const order = await Order.findById(req.params.id).populate('lead');
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
 
-        // Generate PI Number if not exists
-        if (!order.piNumber) {
-            order.piNumber = `PI-${Date.now()}`;
-            await order.save();
-        }
+    // Generate PI Number if not exists
+    if (!order.piNumber) {
+      order.piNumber = `PI-${Date.now()}`;
+      await order.save();
+    }
 
-        // HTML Template
-        const htmlContent = `
+    // HTML Template
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -103,42 +103,57 @@ exports.generatePI = async (req, res) => {
       </html>
     `;
 
-        const fileName = `PI-${order.piNumber}.pdf`;
-        const pdfPath = await generatePDF(htmlContent, fileName);
+    const fileName = `PI-${order.piNumber}.pdf`;
+    const pdfPath = await generatePDF(htmlContent, fileName);
 
-        // In a real app, upload to S3 here and save URL
-        const pdfUrl = `/pdfs/${fileName}`; // Local path for now
-        order.documents.piUrl = pdfUrl;
-        order.status = 'PI_GENERATED';
-        await order.save();
+    // In a real app, upload to S3 here and save URL
+    const pdfUrl = `/pdfs/${fileName}`; // Local path for now
+    order.documents.piUrl = pdfUrl;
+    order.status = 'PI_GENERATED';
+    await order.save();
 
-        res.status(200).json({ success: true, data: order, pdfUrl });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
+    res.status(200).json({ success: true, data: order, pdfUrl });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
 
 exports.recordPayment = async (req, res) => {
-    try {
-        const order = await Order.findById(req.params.id);
-        if (!order) {
-            return res.status(404).json({ success: false, error: 'Order not found' });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ success: false, error: 'Please upload payment proof' });
-        }
-
-        // In a real app, upload to S3 here
-        const fileUrl = `/uploads/${req.file.filename}`;
-
-        order.status = 'ORDER_CONFIRMED';
-        order.timeline.advanceDate = Date.now();
-
-        await order.save();
-
-        res.status(200).json({ success: true, data: order, fileUrl });
-    } catch (error) {
-        res.status(400).json({ success: false, error: error.message });
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
     }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Please upload payment proof' });
+    }
+
+    // In a real app, upload to S3 here
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    order.status = 'ORDER_CONFIRMED';
+    order.timeline.advanceDate = Date.now();
+
+    await order.save();
+
+    res.status(200).json({ success: true, data: order, fileUrl });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Get buyer's orders
+// @route   GET /api/orders/my-orders
+// @access  Private (Buyer)
+exports.getBuyerOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.user.id })
+      .populate('lead')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
 };

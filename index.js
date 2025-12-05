@@ -10,7 +10,8 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -32,6 +33,7 @@ app.use('/api/pos', require('./routes/poRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/customizations', require('./routes/customization/customizationRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/documents', require('./routes/documentRoutes'));
 
 // Serve static files for PDFs and Uploads
 const path = require('path');
