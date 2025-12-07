@@ -58,7 +58,11 @@ const loginUser = async (req, res) => {
         // Check for user email
         const user = await User.findOne({ email }).select('+password');
 
-        if (user && (await user.matchPassword(password))) {
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (await user.matchPassword(password)) {
             res.json({
                 _id: user._id,
                 name: user.name,
@@ -67,7 +71,7 @@ const loginUser = async (req, res) => {
                 token: generateToken(user._id),
             });
         } else {
-            res.status(401).json({ message: 'Invalid credentials' });
+            res.status(401).json({ message: 'Password is wrong' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -4,22 +4,8 @@ const Lead = require('../models/Lead');
 // @route   POST /api/leads
 // @access  Public
 exports.createLead = async (req, res) => {
-    console.log('createLead called');
-    console.log('Content-Type:', req.headers['content-type']);
-    console.log('req.body:', req.body);
-    console.log('req.files:', req.files);
     try {
-        if (!req.body) {
-            console.error('req.body is undefined!');
-            return res.status(400).json({ success: false, error: 'Request body is missing' });
-        }
-        const { name, email, phone, country, productType, quantity, budget, message } = req.body;
-
-        // Handle file uploads
-        let referenceImages = [];
-        if (req.files && req.files.length > 0) {
-            referenceImages = req.files.map(file => `/uploads/${file.filename}`);
-        }
+        const { name, email, phone, country, productType, quantity, budget, message, referenceImages, leadType } = req.body;
 
         // If user is a buyer, assign userId. If seller/admin, userId is optional (manual entry)
         const userId = req.user.role === 'BUYER' ? req.user.id : (req.body.userId || null);
@@ -34,6 +20,7 @@ exports.createLead = async (req, res) => {
             budget,
             message,
             referenceImages,
+            leadType: leadType || 'ODM', // Use provided type or default
             userId, // Can be null for manually added leads
             assignedTo: req.user.role === 'SELLER' ? req.user.id : null // Auto-assign if seller creates it
         });
@@ -77,9 +64,51 @@ exports.updateLead = async (req, res) => {
             new: true,
             runValidators: true
         });
+
         if (!lead) {
             return res.status(404).json({ success: false, error: 'Lead not found' });
         }
+
+        // Auto-create order when status changes to ORDER_CONFIRMED
+        if (req.body.status === 'ORDER_CONFIRMED' && lead.userId) {
+            const Order = require('../models/Order');
+
+            // Check if order already exists for this lead
+            const existingOrder = await Order.findOne({ lead: lead._id });
+
+            if (!existingOrder) {
+                // Generate PI number
+                const piNumber = `PI-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+                // Create order
+                await Order.create({
+                    lead: lead._id,
+                    userId: lead.userId, // Link to buyer
+                    piNumber: piNumber,
+                    buyerDetails: {
+                        name: lead.name,
+                        email: lead.email,
+                        phone: lead.phone ? `${lead.countryCode || ''} ${lead.phone}` : '',
+                        address: lead.country
+                    },
+                    products: [{
+                        styleName: lead.productType,
+                        quantity: lead.quantity || 0,
+                        unitPrice: 0, // To be updated by seller
+                        totalPrice: 0,
+                        sizeBreakdown: 'To be confirmed'
+                    }],
+                    totalAmount: 0, // To be updated
+                    status: 'PI_GENERATED',
+                    timeline: {
+                        piDate: new Date()
+                    }
+                });
+
+                console.log(`✅ Order created automatically for lead ${lead._id}`);
+            }
+        }
+
         res.status(200).json({ success: true, data: lead });
     } catch (error) {
         res.status(400).json({ success: false, error: error.message });

@@ -37,6 +37,8 @@ const authorize = (...roles) => {
             });
         }
 
+        console.log('Auth Check:', { requiredRoles: roles, userRole: req.user.role }); // Debug log
+
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
                 message: `User role ${req.user.role} is not authorized to access this route`

@@ -10,6 +10,11 @@ const leadSchema = new mongoose.Schema({
     budget: { type: String },
     message: { type: String },
     referenceImages: [{ type: String }], // URLs
+    leadType: {
+        type: String,
+        enum: ['ODM', 'OEM', 'SAMPLE_REQUEST'],
+        default: 'ODM' // Default to ODM for product inquiries
+    },
     status: {
         type: String,
         enum: ['NEW', 'QUALIFIED', 'SCOPE_LOCKED', 'PI_SENT', 'ORDER_CONFIRMED', 'LOST'],

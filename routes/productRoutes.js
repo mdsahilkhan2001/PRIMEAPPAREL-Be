@@ -6,24 +6,42 @@ const {
     getSellerProducts,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    fixProducts,
+    getPendingDesigns,
+    updateApprovalStatus
 } = require('../controllers/productController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // Public routes
+router.route('/fix-db').get(fixProducts);
 router.route('/').get(getProducts);
 
 // Protected routes - must be before /:id to avoid matching "my-products" as an id
-router.route('/my-products').get(protect, authorize('SELLER', 'ADMIN'), getSellerProducts);
+router.route('/pending-designs').get(protect, authorize('ADMIN'), getPendingDesigns);
+router.route('/my-products').get(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), getSellerProducts);
 
 // Protected routes with file upload
 router.route('/')
-    .post(protect, authorize('SELLER', 'ADMIN'), upload.array('images', 10), createProduct);
+    .post(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), upload.fields([
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 1 },
+        { name: 'techpack', maxCount: 1 },
+        { name: 'complianceDocs', maxCount: 1 }
+    ]), createProduct);
 
 router.route('/:id')
     .get(getProductById)
-    .put(protect, authorize('SELLER', 'ADMIN'), upload.array('images', 10), updateProduct)
-    .delete(protect, authorize('SELLER', 'ADMIN'), deleteProduct);
+    .put(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), upload.fields([
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 1 },
+        { name: 'techpack', maxCount: 1 },
+        { name: 'complianceDocs', maxCount: 1 }
+    ]), updateProduct)
+    .delete(protect, authorize('SELLER', 'DESIGNER', 'ADMIN'), deleteProduct);
+
+router.route('/:id/approval')
+    .put(protect, authorize('ADMIN'), updateApprovalStatus);
 
 module.exports = router;
