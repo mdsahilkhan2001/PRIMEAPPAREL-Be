@@ -5,7 +5,7 @@ const Lead = require('../models/Lead');
 // @access  Public
 exports.createLead = async (req, res) => {
     try {
-        const { name, email, phone, country, productType, quantity, budget, message, referenceImages } = req.body;
+        const { name, email, phone, country, productType, quantity, budget, message, referenceImages, leadType } = req.body;
 
         // If user is a buyer, assign userId. If seller/admin, userId is optional (manual entry)
         const userId = req.user.role === 'BUYER' ? req.user.id : (req.body.userId || null);
@@ -20,6 +20,7 @@ exports.createLead = async (req, res) => {
             budget,
             message,
             referenceImages,
+            leadType: leadType || 'ODM', // Use provided type or default
             userId, // Can be null for manually added leads
             assignedTo: req.user.role === 'SELLER' ? req.user.id : null // Auto-assign if seller creates it
         });

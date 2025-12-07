@@ -12,7 +12,7 @@ const leadSchema = new mongoose.Schema({
     referenceImages: [{ type: String }], // URLs
     leadType: {
         type: String,
-        enum: ['ODM', 'OEM'],
+        enum: ['ODM', 'OEM', 'SAMPLE_REQUEST'],
         default: 'ODM' // Default to ODM for product inquiries
     },
     status: {
