@@ -1,0 +1,21 @@
+const express = require('express');
+const router = express.Router();
+const {
+    createContact,
+    getAllContacts,
+    updateContactStatus,
+    deleteContact
+} = require('../controllers/contactController');
+const { protect, authorize } = require('../middleware/authMiddleware');
+
+router.route('/')
+    .post(createContact)
+    .get(protect, authorize('SELLER', 'ADMIN'), getAllContacts);
+
+router.route('/:id')
+    .delete(protect, authorize('SELLER', 'ADMIN'), deleteContact);
+
+router.route('/:id/status')
+    .patch(protect, authorize('SELLER', 'ADMIN'), updateContactStatus);
+
+module.exports = router;

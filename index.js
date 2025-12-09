@@ -34,6 +34,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/customizations', require('./routes/customization/customizationRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/documents', require('./routes/documentRoutes'));
+app.use('/api/contacts', require('./routes/contactRoutes'));
 
 // Serve static files for PDFs and Uploads
 const path = require('path');
