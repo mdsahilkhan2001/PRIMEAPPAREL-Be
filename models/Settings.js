@@ -11,7 +11,6 @@ const settingsSchema = new mongoose.Schema({
     },
     supportEmail: {
         type: String,
-<<<<<<< HEAD
         default: 'support@primeapparel.com'
     },
     supportPhone: {
@@ -26,31 +25,6 @@ const settingsSchema = new mongoose.Schema({
         facebook: { type: String, default: '' },
         instagram: { type: String, default: '' },
         linkedin: { type: String, default: '' }
-=======
-        default: ''
-    },
-    supportPhone: {
-        type: String,
-        default: ''
-    },
-    officeAddress: {
-        type: String,
-        default: ''
-    },
-    socialLinks: {
-        facebook: {
-            type: String,
-            default: ''
-        },
-        instagram: {
-            type: String,
-            default: ''
-        },
-        linkedin: {
-            type: String,
-            default: ''
-        }
->>>>>>> aadf8a94f09d3d3e21408e6fe41a17f60baa30ca
     }
 }, {
     timestamps: true

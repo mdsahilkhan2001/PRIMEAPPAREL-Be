@@ -137,12 +137,11 @@ exports.getPITemplate = (order, piNumber) => {
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="company-name">${settings.siteName || 'PRIME APPAREL EXPORTS'}</div>
+        <div class="company-name">PRIME APPAREL EXPORTS</div>
         <div class="company-details">
-            ${settings.officeAddress || 'Office: Minara Masjid, Mohammad Ali Road, Mumbai – 400003'}<br>
+            Office: Minara Masjid, Mohammad Ali Road, Mumbai – 400003<br>
             Factory: Sion, Mumbai<br>
-            Email: ${settings.supportEmail || 'info@primeapparelexports.com'} | 
-            Phone: ${settings.supportPhone || '+91 90000 12345'}<br>
+            Email: info@primeapparelexports.com | Phone: +91 90000 12345<br>
             GST: 27ABCDE1234F1Z5 | IEC: 0399999999
         </div>
     </div>
@@ -161,11 +160,11 @@ exports.getPITemplate = (order, piNumber) => {
     <!-- Buyer Details -->
     <div class="buyer-box">
         <div style="font-weight: bold; margin-bottom: 10px;">Buyer:</div>
-        <div><strong>${order.buyerDetails?.company || order.userId?.company || 'N/A'}</strong></div>
-        <div>Address: ${order.buyerDetails?.address || 'N/A'}</div>
-        <div>Contact: ${order.buyerDetails?.name || order.userId?.name || 'N/A'}</div>
-        <div>Email: ${order.buyerDetails?.email || order.userId?.email || 'N/A'}</div>
-        <div>Phone: ${order.buyerDetails?.phone || order.userId?.phone || 'N/A'}</div>
+        <div><strong>${order.buyerDetails?.company || order.userId?.company || order.lead?.name || 'N/A'}</strong></div>
+        <div>Address: ${order.buyerDetails?.address || order.lead?.country || 'N/A'}</div>
+        <div>Contact: ${order.buyerDetails?.name || order.userId?.name || order.lead?.name || 'N/A'}</div>
+        <div>Email: ${order.buyerDetails?.email || order.userId?.email || order.lead?.email || 'N/A'}</div>
+        <div>Phone: ${order.buyerDetails?.phone || order.userId?.phone || order.lead?.phone || 'N/A'}</div>
     </div>
 
     <!-- Order Details -->
@@ -186,19 +185,19 @@ exports.getPITemplate = (order, piNumber) => {
         <tbody>
             ${order.products.map(product => `
                 <tr>
-                    <td>${product.styleNumber || 'N/A'}</td>
-                    <td>${product.styleName || product.name || 'N/A'}</td>
-                    <td>-</td>
-                    <td>-</td>
+                    <td>${product.styleNumber || 'PAE-KF-001'}</td>
+                    <td>${product.styleName || product.name || 'Kaftan'}</td>
+                    <td>${product.fabric || 'Rayon'}</td>
+                    <td>${product.color || 'Navy Blue'}</td>
                     <td>${product.sizeBreakdown || 'S-XL'}</td>
                     <td class="text-right">${product.quantity}</td>
-                    <td class="text-right">$${product.unitPrice?.toFixed(2)}</td>
-                    <td class="text-right">$${product.totalPrice?.toFixed(2)}</td>
+                    <td class="text-right">$${product.unitPrice?.toFixed(2) || '0.00'}</td>
+                    <td class="text-right">$${product.totalPrice?.toFixed(2) || '0.00'}</td>
                 </tr>
             `).join('')}
             <tr class="total-row">
                 <td colspan="7" class="text-right">Subtotal:</td>
-                <td class="text-right">$${order.totalAmount?.toFixed(2)}</td>
+                <td class="text-right">$${order.totalAmount?.toFixed(2) || '0.00'}</td>
             </tr>
             <tr>
                 <td colspan="7" class="text-right">Taxes:</td>
@@ -206,7 +205,7 @@ exports.getPITemplate = (order, piNumber) => {
             </tr>
             <tr class="total-row">
                 <td colspan="7" class="text-right"><strong>Grand Total (USD):</strong></td>
-                <td class="text-right"><strong>$${order.totalAmount?.toFixed(2)}</strong></td>
+                <td class="text-right"><strong>$${order.totalAmount?.toFixed(2) || '0.00'}</strong></td>
             </tr>
         </tbody>
     </table>
@@ -261,18 +260,15 @@ exports.getPITemplate = (order, piNumber) => {
 
     <!-- Signature -->
     <div class="signature-section">
-        <div class="section-title">SIGNATURE</div>
+        <div class="section-title">DIGITAL SIGNATURE</div>
         <div class="signature-box">
             <div><strong>For Prime Apparel Exports</strong></div>
-            <div style="margin-top: 10px;">Name: Mohammad Sadab</div>
+            <div style="margin-top: 20px; font-family: 'Brush Script MT', cursive; font-size: 24px; color: #000;">Mohammad Sadab</div>
+            <div style="margin-top: 5px;">Auth. Signatory</div>
+            <div style="margin-top: 5px;">Name: Mohammad Sadab</div>
             <div>Position: Director</div>
-            <div style="margin-top: 20px;">Signature: ____________________</div>
             <div>Date: ${formatDate(new Date())}</div>
         </div>
-    </div>
-
-    <div class="footer">
-        This is a computer-generated document. No signature required.
     </div>
 </body>
 </html>
@@ -637,9 +633,9 @@ exports.getPackingListTemplate = (order, plNumber, metadata) => {
     <!-- Buyer Info -->
     <div class="section-title">Consignee</div>
     <div class="info-section">
-        <div><strong>${order.buyerDetails?.company || order.userId?.company || 'N/A'}</strong></div>
-        <div>${order.buyerDetails?.address || 'N/A'}</div>
-        <div>${order.buyerDetails?.email || order.userId?.email || 'N/A'}</div>
+        <div><strong>${order.buyerDetails?.company || order.userId?.company || order.lead?.name || 'N/A'}</strong></div>
+        <div>${order.buyerDetails?.address || order.lead?.country || 'N/A'}</div>
+        <div>${order.buyerDetails?.email || order.userId?.email || order.lead?.email || 'N/A'}</div>
     </div>
 
     <!-- Carton Details -->

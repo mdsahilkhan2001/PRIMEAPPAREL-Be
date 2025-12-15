@@ -87,7 +87,7 @@ const documentSchema = new mongoose.Schema({
 });
 
 // Generate document number based on type
-documentSchema.pre('save', async function (next) {
+documentSchema.pre('validate', async function () {
     if (this.isNew && !this.documentNumber) {
         const year = new Date().getFullYear();
         const prefix = this.documentType === 'PI' ? 'PAE' :
@@ -108,7 +108,6 @@ documentSchema.pre('save', async function (next) {
 
         this.documentNumber = `${prefix}-${year}-${String(sequence).padStart(3, '0')}`;
     }
-    next();
 });
 
 // Add to history before save

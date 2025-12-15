@@ -106,6 +106,19 @@ exports.updateLead = async (req, res) => {
                 });
 
                 console.log(`✅ Order created automatically for lead ${lead._id}`);
+
+                // Return the order ID so frontend can redirect
+                return res.status(200).json({
+                    success: true,
+                    data: lead,
+                    orderId: existingOrder ? existingOrder._id : (typeof Order !== 'undefined' ? (await Order.findOne({ lead: lead._id }))._id : null)
+                });
+            } else {
+                return res.status(200).json({
+                    success: true,
+                    data: lead,
+                    orderId: existingOrder._id
+                });
             }
         }
 

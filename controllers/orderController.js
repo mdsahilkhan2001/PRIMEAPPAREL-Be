@@ -157,3 +157,20 @@ exports.getBuyerOrders = async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 };
+// @desc    Get seller's orders (All confirmed orders for now)
+// @route   GET /api/orders/seller-orders
+// @access  Private (Seller/Admin)
+exports.getSellerOrders = async (req, res) => {
+  try {
+    // For MVP, Seller sees all orders. 
+    // In future, filter by { 'products.seller': req.user.id } if multi-vendor.
+    const orders = await Order.find({})
+      .populate('lead')
+      .populate('userId', 'name email company')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};

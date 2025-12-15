@@ -1,5 +1,6 @@
 const Document = require('../models/Document');
 const Order = require('../models/Order');
+const path = require('path');
 const { generatePDF } = require('../services/pdfService');
 const { getPITemplate, getCITemplate, getPackingListTemplate } = require('../templates/documentTemplates');
 
@@ -33,6 +34,10 @@ exports.getOrderDocuments = async (req, res) => {
 // @access  Private (Seller/Admin)
 exports.generatePI = async (req, res) => {
     try {
+        if (!req.params.orderId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ success: false, error: 'Invalid Order ID format' });
+        }
+
         const order = await Order.findById(req.params.orderId)
             .populate('lead')
             .populate('userId', 'name email phone company');
@@ -56,8 +61,17 @@ exports.generatePI = async (req, res) => {
                 orderId: order._id,
                 documentType: 'PI',
                 createdBy: req.user.id,
-                status: 'DRAFT'
+                status: 'DRAFT',
+                filePath: 'generating...' // Placeholder to satisfy validation
             });
+            // Save to trigger pre-save hook for documentNumber
+            await document.save();
+        }
+
+        // Ensure documentNumber is available
+        if (!document.documentNumber) {
+            // Reload document to get the generated number
+            document = await Document.findById(document._id);
         }
 
         // Generate HTML from template
@@ -75,6 +89,10 @@ exports.generatePI = async (req, res) => {
         await document.addHistory('CREATED', req.user.id, 'PI generated');
 
         // Update order
+        if (!order.documents) {
+            order.documents = {};
+        }
+
         if (!order.documents.piUrl) {
             order.documents.piUrl = document.filePath;
             order.piNumber = document.documentNumber;
@@ -325,10 +343,8 @@ exports.downloadDocument = async (req, res) => {
         // Add to history
         await document.addHistory('DOWNLOADED', req.user.id);
 
-        res.status(200).json({
-            success: true,
-            downloadUrl: document.filePath
-        });
+        const absolutePath = path.join(__dirname, '../public', document.filePath);
+        res.download(absolutePath);
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
