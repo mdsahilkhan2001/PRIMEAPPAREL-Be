@@ -157,9 +157,43 @@ exports.getBuyerOrders = async (req, res) => {
     res.status(400).json({ success: false, error: error.message });
   }
 };
-// @desc    Get seller's orders (All confirmed orders for now)
-// @route   GET /api/orders/seller-orders
+// @desc    Update order details (for PI correction etc)
+// @route   PUT /api/orders/:id
 // @access  Private (Seller/Admin)
+exports.updateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    // Allow updating specific fields
+    const { buyerDetails, commercialTerm, paymentTerms, products, status, timeline } = req.body;
+
+    if (buyerDetails) {
+      const currentBuyer = order.buyerDetails ? (order.buyerDetails.toObject ? order.buyerDetails.toObject() : order.buyerDetails) : {};
+      order.buyerDetails = { ...currentBuyer, ...buyerDetails };
+    }
+    if (commercialTerm) order.commercialTerm = commercialTerm;
+    if (paymentTerms) order.paymentTerms = paymentTerms;
+    if (products) order.products = products;
+    if (status) order.status = status;
+
+    // Update timeline if provided (e.g. manual adjustments)
+    if (timeline) {
+      const currentTimeline = order.timeline ? (order.timeline.toObject ? order.timeline.toObject() : order.timeline) : {};
+      order.timeline = { ...currentTimeline, ...timeline };
+    }
+
+    await order.save();
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
 exports.getSellerOrders = async (req, res) => {
   try {
     // For MVP, Seller sees all orders. 
